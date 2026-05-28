@@ -23,6 +23,11 @@ fun Task6PrizesScreen(
     viewModel: Task6PrizesViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val selectedYear by viewModel.selectedYear.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+
+    var yearExpanded by remember { mutableStateOf(false) }
+    var catExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadPrizes()
@@ -40,18 +45,78 @@ fun Task6PrizesScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            when (val s = state) {
-                is Task6PrizesState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                is Task6PrizesState.Error -> Text(
-                    s.message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                )
-                is Task6PrizesState.Success -> {
-                    LazyColumn(contentPadding = PaddingValues(8.dp)) {
-                        items(s.prizes) { prize ->
-                            PrizeCard(prize, onClick = { onPrizeClick(prize) })
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = yearExpanded,
+                    onExpandedChange = { yearExpanded = it },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = selectedYear.ifEmpty { "Все годы" },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Год") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = yearExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = yearExpanded, onDismissRequest = { yearExpanded = false }) {
+                        viewModel.years.forEach { year ->
+                            DropdownMenuItem(
+                                text = { Text(year.ifEmpty { "Все годы" }) },
+                                onClick = { viewModel.setYear(year); yearExpanded = false }
+                            )
+                        }
+                    }
+                }
+                ExposedDropdownMenuBox(
+                    expanded = catExpanded,
+                    onExpandedChange = { catExpanded = it },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategory.ifEmpty { "Все" },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Категория") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = catExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = catExpanded, onDismissRequest = { catExpanded = false }) {
+                        viewModel.categories.forEach { cat ->
+                            DropdownMenuItem(
+                                text = { Text(cat.ifEmpty { "Все" }.replaceFirstChar { it.uppercase() }) },
+                                onClick = { viewModel.setCategory(cat); catExpanded = false }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (val s = state) {
+                    is Task6PrizesState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                    is Task6PrizesState.Error -> Text(
+                        s.message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                    )
+                    is Task6PrizesState.Success -> {
+                        if (s.prizes.isEmpty()) {
+                            Text(
+                                "Ничего не найдено",
+                                modifier = Modifier.align(Alignment.Center),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            LazyColumn(contentPadding = PaddingValues(8.dp)) {
+                                items(s.prizes) { prize ->
+                                    PrizeCard(prize, onClick = { onPrizeClick(prize) })
+                                }
+                            }
                         }
                     }
                 }

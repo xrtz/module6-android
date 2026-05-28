@@ -17,21 +17,54 @@ sealed class Task6PrizesState {
 }
 
 class Task6PrizesViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = Task6RepositoryImpl()
+    private val tokenStore = Task6TokenStore(application)
+
+    private var allPrizes: List<Prize> = emptyList()
+
     private val _state = MutableStateFlow<Task6PrizesState>(Task6PrizesState.Loading)
     val state: StateFlow<Task6PrizesState> = _state
 
-    private val repository = Task6RepositoryImpl()
-    private val tokenStore = Task6TokenStore(application)
+    private val _selectedYear = MutableStateFlow("")
+    val selectedYear: StateFlow<String> = _selectedYear
+
+    private val _selectedCategory = MutableStateFlow("")
+    val selectedCategory: StateFlow<String> = _selectedCategory
+
+    val categories: List<String>
+        get() = listOf("") + allPrizes.map { it.category }.distinct().sorted()
+
+    val years: List<String>
+        get() = listOf("") + allPrizes.map { it.awardYear.toString() }.distinct().sortedDescending()
 
     fun loadPrizes() {
         viewModelScope.launch {
             _state.value = Task6PrizesState.Loading
             try {
-                val prizes = repository.getPrizes()
-                _state.value = Task6PrizesState.Success(prizes)
+                allPrizes = repository.getPrizes()
+                _state.value = Task6PrizesState.Success(applyFilter())
             } catch (e: Exception) {
                 _state.value = Task6PrizesState.Error(e.message ?: "Ошибка загрузки")
             }
+        }
+    }
+
+    fun setYear(year: String) {
+        _selectedYear.value = year
+        _state.value = Task6PrizesState.Success(applyFilter())
+    }
+
+    fun setCategory(category: String) {
+        _selectedCategory.value = category
+        _state.value = Task6PrizesState.Success(applyFilter())
+    }
+
+    private fun applyFilter(): List<Prize> {
+        val year = _selectedYear.value
+        val category = _selectedCategory.value
+        return allPrizes.filter {
+            (year.isEmpty() || it.awardYear.toString() == year) &&
+                (category.isEmpty() || it.category.equals(category, ignoreCase = true))
         }
     }
 
