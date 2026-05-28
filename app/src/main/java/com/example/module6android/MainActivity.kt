@@ -4,14 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.remember
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.module6android.task1.domain.model.Photo
+import com.example.module6android.task1.presentation.detail.PhotoDetailScreen
+import com.example.module6android.task1.presentation.list.PhotoListScreen
 import com.example.module6android.ui.theme.Module6androidTheme
+import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,28 +20,30 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Module6androidTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "photo_list") {
+
+                    composable("photo_list") {
+                        PhotoListScreen(
+                            onPhotoClick = { photo ->
+                                val photoJson = java.net.URLEncoder.encode(Gson().toJson(photo), "UTF-8")
+                                navController.navigate("photo_detail/$photoJson")
+                            }
+                        )
+                    }
+
+                    composable("photo_detail/{photoJson}") { backStackEntry ->
+                        val photoJson = java.net.URLDecoder.decode(
+                            backStackEntry.arguments?.getString("photoJson") ?: "", "UTF-8"
+                        )
+                        val photo = remember(photoJson) { Gson().fromJson(photoJson, Photo::class.java) }
+                        PhotoDetailScreen(
+                            photo = photo,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
                 }
             }
         }
-    }
-}
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Module6androidTheme {
-        Greeting("Android")
     }
 }
