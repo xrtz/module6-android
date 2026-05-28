@@ -1,6 +1,5 @@
 package com.example.module6android.task2.data.remote.dto
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -30,4 +29,34 @@ data class NobelPrizeDto(
 @Serializable
 data class NobelPrizeResponse(
     val nobelPrizes: List<NobelPrizeDto>? = null
+)
+
+@Serializable
+data class PlaceDto(
+    val city: LocalizedStringDto? = null,
+    val country: LocalizedStringDto? = null,
+    val cityNow: LocalizedStringDto? = null,
+    val countryNow: LocalizedStringDto? = null
+)
+
+@Serializable
+data class BirthDto(
+    val date: String? = null,
+    val place: PlaceDto? = null
+)
+
+@Serializable
+data class WikipediaDto(
+    val english: String? = null
+)
+
+@Serializable
+data class LaureateDetailDto(
+    val id: String? = null,
+    val knownName: LocalizedStringDto? = null,
+    val fullName: LocalizedStringDto? = null,
+    val fileName: String? = null,
+    val gender: String? = null,
+    val birth: BirthDto? = null,
+    val wikipedia: WikipediaDto? = null
 )

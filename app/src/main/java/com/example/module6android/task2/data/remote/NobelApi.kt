@@ -1,5 +1,6 @@
 package com.example.module6android.task2.data.remote
 
+import com.example.module6android.task2.data.remote.dto.LaureateDetailDto
 import com.example.module6android.task2.data.remote.dto.NobelPrizeResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -36,5 +37,9 @@ class NobelApi {
             year?.let { parameter("nobelPrizeYear", it) }
             category?.let { parameter("nobelPrizeCategory", it) }
         }.body()
+    }
+
+    suspend fun getLaureate(id: String): LaureateDetailDto {
+        return client.get("https://api.nobelprize.org/2.1/laureate/$id").body()
     }
 }
