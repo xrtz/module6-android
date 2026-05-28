@@ -40,7 +40,6 @@ class MainActivity : ComponentActivity() {
                             backStackEntry.arguments?.getString("token") ?: "", "UTF-8"
                         )
                         Task6PrizesScreen(
-                            token = token,
                             onPrizeClick = { prize ->
                                 val prizeJson = java.net.URLEncoder.encode(Gson().toJson(prize), "UTF-8")
                                 val tokenEncoded = java.net.URLEncoder.encode(token, "UTF-8")

@@ -18,15 +18,14 @@ import com.example.module6android.task6.domain.model.Prize
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Task6PrizesScreen(
-    token: String,
     onPrizeClick: (Prize) -> Unit,
     onLogout: () -> Unit,
     viewModel: Task6PrizesViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(token) {
-        viewModel.loadPrizes(token)
+    LaunchedEffect(Unit) {
+        viewModel.loadPrizes()
     }
 
     Scaffold(
@@ -70,7 +69,7 @@ private fun PrizeCard(prize: Prize, onClick: () -> Unit) {
             .clickable(onClick = onClick)
     ) {
         Column(Modifier.padding(12.dp)) {
-            Text("${prize.year} — ${prize.category.replaceFirstChar { it.uppercase() }}", fontWeight = FontWeight.Bold)
+            Text("${prize.awardYear} — ${prize.category.replaceFirstChar { it.uppercase() }}", fontWeight = FontWeight.Bold)
             if (prize.laureates.isNotEmpty()) {
                 Text(
                     prize.laureates.joinToString(", ") { it.fullName },

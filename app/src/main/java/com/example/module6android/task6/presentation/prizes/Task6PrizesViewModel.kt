@@ -23,11 +23,11 @@ class Task6PrizesViewModel(application: Application) : AndroidViewModel(applicat
     private val repository = Task6RepositoryImpl()
     private val tokenStore = Task6TokenStore(application)
 
-    fun loadPrizes(token: String) {
+    fun loadPrizes() {
         viewModelScope.launch {
             _state.value = Task6PrizesState.Loading
             try {
-                val prizes = repository.getPrizes(token)
+                val prizes = repository.getPrizes()
                 _state.value = Task6PrizesState.Success(prizes)
             } catch (e: Exception) {
                 _state.value = Task6PrizesState.Error(e.message ?: "Ошибка загрузки")

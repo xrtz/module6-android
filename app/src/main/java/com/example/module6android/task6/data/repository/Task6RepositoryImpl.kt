@@ -11,29 +11,20 @@ class Task6RepositoryImpl(private val api: OwnServerApi = OwnServerApi()) : Task
     override suspend fun login(username: String, password: String): String =
         api.login(username, password).token
 
-    override suspend fun getPrizes(token: String): List<Prize> =
-        api.getPrizes(token).map { dto ->
+    override suspend fun getPrizes(): List<Prize> =
+        api.getPrizes().map { dto ->
             Prize(
                 id = dto.id,
-                year = dto.year,
+                awardYear = dto.awardYear,
                 category = dto.category,
+                fullName = dto.fullName,
+                motivation = dto.motivation,
+                detailLink = dto.detailLink,
                 laureates = dto.laureates.map { l ->
-                    PrizeLaureate(l.id, l.fullName, l.portion, l.motivation)
+                    PrizeLaureate(l.id, l.fullName, l.portion, l.motivation, l.portraitUrl)
                 }
             )
         }
-
-    override suspend fun getPrize(token: String, year: Int, category: String): Prize {
-        val dto = api.getPrize(token, year, category)
-        return Prize(
-            id = dto.id,
-            year = dto.year,
-            category = dto.category,
-            laureates = dto.laureates.map { l ->
-                PrizeLaureate(l.id, l.fullName, l.portion, l.motivation)
-            }
-        )
-    }
 
     override suspend fun getFavorites(token: String): List<FavoritePrize> =
         api.getFavorites(token).map { dto ->

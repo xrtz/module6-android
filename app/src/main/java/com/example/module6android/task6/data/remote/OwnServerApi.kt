@@ -13,7 +13,6 @@ import kotlinx.serialization.json.Json
 
 class OwnServerApi(private val baseUrl: String = BASE_URL) {
     companion object {
-        // Замени на IP своего сервера, например "http://192.168.1.100:8080"
         const val BASE_URL = "http://10.0.2.2:8080"
     }
 
@@ -34,14 +33,12 @@ class OwnServerApi(private val baseUrl: String = BASE_URL) {
         }.body()
     }
 
-    suspend fun getPrizes(token: String): List<PrizeDto> {
-        return client.get("$baseUrl/prizes") {
-            header("Authorization", "Bearer $token")
-        }.body()
+    suspend fun getPrizes(): List<PrizeDto> {
+        return client.get("$baseUrl/v2/prizes").body()
     }
 
-    suspend fun getPrize(token: String, year: Int, category: String): PrizeDto {
-        return client.get("$baseUrl/prizes/$year/$category") {
+    suspend fun getProfile(token: String): UserProfileDto {
+        return client.get("$baseUrl/users/me") {
             header("Authorization", "Bearer $token")
         }.body()
     }

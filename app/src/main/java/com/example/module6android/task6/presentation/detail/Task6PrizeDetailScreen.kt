@@ -25,25 +25,24 @@ fun Task6PrizeDetailScreen(
     viewModel: Task6PrizeDetailViewModel = viewModel()
 ) {
     val favoriteState by viewModel.favoriteState.collectAsState()
-    val prizeIdInt = prize.id.toIntOrNull() ?: 0
 
     LaunchedEffect(prize.id) {
-        if (prizeIdInt > 0) viewModel.loadFavorites(token, prizeIdInt)
+        viewModel.loadFavorites(token, prize.id)
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("${prize.year} ${prize.category.replaceFirstChar { it.uppercase() }}") },
+                title = { Text("${prize.awardYear} ${prize.category.replaceFirstChar { it.uppercase() }}") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 },
                 actions = {
-                    if (favoriteState is FavoriteState.Loaded && prizeIdInt > 0) {
+                    if (favoriteState is FavoriteState.Loaded) {
                         val isFav = (favoriteState as FavoriteState.Loaded).isFavorite
-                        IconButton(onClick = { viewModel.toggleFavorite(token, prizeIdInt) }) {
+                        IconButton(onClick = { viewModel.toggleFavorite(token, prize.id) }) {
                             Icon(
                                 if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = if (isFav) "Удалить из избранного" else "Добавить в избранное",
