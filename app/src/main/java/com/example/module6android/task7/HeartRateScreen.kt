@@ -1,5 +1,13 @@
 package com.example.module6android.task7
 
+import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,17 +16,53 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+private fun requiredPermissions(): Array<String> =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+    } else {
+        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+private fun Context.hasAllPermissions(): Boolean =
+    requiredPermissions().all {
+        ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+private fun Context.isBluetoothEnabled(): Boolean {
+    val manager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager ?: return false
+    return manager.adapter?.isEnabled == true
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HeartRateScreen(viewModel: BleViewModel = viewModel()) {
+    val context = LocalContext.current
     val devices by viewModel.devices.collectAsState()
     val heartRate by viewModel.heartRate.collectAsState()
     val connectionState by viewModel.connectionState.collectAsState()
+
+    var hasPermissions by remember { mutableStateOf(context.hasAllPermissions()) }
+    var bluetoothEnabled by remember { mutableStateOf(context.isBluetoothEnabled()) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        hasPermissions = result.values.all { it }
+    }
+
+    val enableBtLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        bluetoothEnabled = context.isBluetoothEnabled()
+    }
 
     Scaffold(
         topBar = {
@@ -31,14 +75,21 @@ fun HeartRateScreen(viewModel: BleViewModel = viewModel()) {
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            when (connectionState) {
-                ConnectionState.CONNECTED -> {
-                    ConnectedView(
-                        heartRate = heartRate,
-                        onDisconnect = { viewModel.disconnect() }
-                    )
-                }
-                ConnectionState.CONNECTING -> {
+            when {
+                !hasPermissions -> PermissionRequest(
+                    onRequest = { permissionLauncher.launch(requiredPermissions()) }
+                )
+                !bluetoothEnabled -> EnableBluetoothRequest(
+                    onEnable = {
+                        enableBtLauncher.launch(android.content.Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                    },
+                    onRefresh = { bluetoothEnabled = context.isBluetoothEnabled() }
+                )
+                connectionState == ConnectionState.CONNECTED -> ConnectedView(
+                    heartRate = heartRate,
+                    onDisconnect = { viewModel.disconnect() }
+                )
+                connectionState == ConnectionState.CONNECTING -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator()
@@ -47,14 +98,55 @@ fun HeartRateScreen(viewModel: BleViewModel = viewModel()) {
                         }
                     }
                 }
-                ConnectionState.DISCONNECTED -> {
-                    ScanView(
-                        devices = devices,
-                        onStartScan = { viewModel.startScan() },
-                        onStopScan = { viewModel.stopScan() },
-                        onConnect = { viewModel.connect(it) }
-                    )
-                }
+                else -> ScanView(
+                    devices = devices,
+                    onStartScan = { viewModel.startScan() },
+                    onStopScan = { viewModel.stopScan() },
+                    onConnect = { viewModel.connect(it) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionRequest(onRequest: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            "Для сканирования BLE устройств нужны разрешения",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onRequest) {
+            Text("Выдать разрешения")
+        }
+    }
+}
+
+@Composable
+private fun EnableBluetoothRequest(onEnable: () -> Unit, onRefresh: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            "Bluetooth выключен",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onEnable) {
+                Text("Включить")
+            }
+            OutlinedButton(onClick = onRefresh) {
+                Text("Обновить")
             }
         }
     }

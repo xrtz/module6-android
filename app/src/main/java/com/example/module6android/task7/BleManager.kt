@@ -11,6 +11,7 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.os.Build
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
@@ -68,8 +69,15 @@ class BleManager(private val context: Context) {
             val characteristic = service.getCharacteristic(heartRateMeasurementUuid) ?: return
             gatt.setCharacteristicNotification(characteristic, true)
             val descriptor = characteristic.getDescriptor(cccDescriptorUuid) ?: return
-            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            gatt.writeDescriptor(descriptor)
+            val value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                gatt.writeDescriptor(descriptor, value)
+            } else {
+                @Suppress("DEPRECATION")
+                descriptor.value = value
+                @Suppress("DEPRECATION")
+                gatt.writeDescriptor(descriptor)
+            }
         }
 
         @Suppress("DEPRECATION")
