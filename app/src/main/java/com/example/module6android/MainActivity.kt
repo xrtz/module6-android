@@ -4,14 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.remember
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.module6android.task2.domain.model.NobelPrize
+import com.example.module6android.task2.presentation.detail.NobelDetailScreen
+import com.example.module6android.task2.presentation.list.NobelListScreen
 import com.example.module6android.ui.theme.Module6androidTheme
+import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,28 +20,30 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Module6androidTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "nobel_list") {
+
+                    composable("nobel_list") {
+                        NobelListScreen(
+                            onPrizeClick = { prize ->
+                                val prizeJson = java.net.URLEncoder.encode(Gson().toJson(prize), "UTF-8")
+                                navController.navigate("nobel_detail/$prizeJson")
+                            }
+                        )
+                    }
+
+                    composable("nobel_detail/{prizeJson}") { backStackEntry ->
+                        val prizeJson = java.net.URLDecoder.decode(
+                            backStackEntry.arguments?.getString("prizeJson") ?: "", "UTF-8"
+                        )
+                        val prize = remember(prizeJson) { Gson().fromJson(prizeJson, NobelPrize::class.java) }
+                        NobelDetailScreen(
+                            prize = prize,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
                 }
             }
         }
-    }
-}
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Module6androidTheme {
-        Greeting("Android")
     }
 }
